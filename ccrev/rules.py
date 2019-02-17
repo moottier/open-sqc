@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from typing import List, TYPE_CHECKING, Union, Any, Dict
+from typing import List, TYPE_CHECKING, Union, Any, Dict, Type, Container
 
 from ccrev.config import ST_DEV, MEAN
 
@@ -170,7 +170,7 @@ class Rule4(Rule):
 
 
 class RuleChecker:
-    def __init__(self, rules=(Rule1, Rule2, Rule3, Rule4)):
+    def __init__(self, rules: Container[Type[Rule]]):
         self.rules = rules
         self._signals: List[Signal] = []
 

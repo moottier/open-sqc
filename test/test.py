@@ -255,6 +255,12 @@ class TestDataProcessing(unittest.TestCase):
                         )
 
 
+class TestRuleChecker(unittest.TestCase):
+    def setUpClass(self):
+        self.
+
+
+
 
 if __name__ == "__main__":
     unittest.main()

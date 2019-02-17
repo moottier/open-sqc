@@ -65,7 +65,7 @@ class DataExtractor:
             file_in_dir = join(dir_path, file)
             if file_types and file.endswith(file_types):
                 yield file_in_dir
-            else:
+            elif not file_types:
                 yield file
             else:
                 continue
