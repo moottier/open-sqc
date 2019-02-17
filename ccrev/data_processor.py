@@ -8,7 +8,7 @@ import openpyxl
 import openpyxl.cell
 import openpyxl.utils.exceptions
 from openpyxl.workbook import Workbook
-from openpyxl.worksheet.read_only import ReadOnlyWorksheet
+from openpyxl.worksheet._read_only import ReadOnlyWorksheet
 
 from ccrev import config
 from ccrev.config import WS_MEAN_ADDR, WS_STDEV_ADDR
@@ -19,8 +19,10 @@ class DataExtractor:
         pass
 
     @staticmethod
-    def get_data(data_source, col=None, min_row=None, max_row=None, worksheet_index=None, address=None) -> Union[
-        List, Any]:
+    def get_data(
+            data_source, col=None, min_row=None, max_row=None, worksheet_index=None, address=None
+    ) -> Union[List, Any]:
+
         data = []
         try:
             worksheet_index = worksheet_index if worksheet_index else config.DATA_SHEET
@@ -52,16 +54,19 @@ class DataExtractor:
         ws = openpyxl.load_workbook(data_source, read_only=True, data_only=True).worksheets[worksheet_index]
         chart_stats: Dict[str, Number] = {
             config.ST_DEV: ws.cell(*WS_STDEV_ADDR).value,
-            config.MEAN: ws.cell(*WS_MEAN_ADDR).value,
+            config.MEAN  : ws.cell(*WS_MEAN_ADDR).value,
         }
 
         return chart_stats
 
     @staticmethod
-    def gen_files_from_dir(dir_path: str, file_types: Union[str, Tuple[str]]):
+    def gen_files_from_dir(dir_path: str, file_types: Union[str, Tuple[str]]=None):
         for file in os.listdir(dir_path):
-            if file.endswith(file_types):
-                yield join(dir_path, file)
+            file_in_dir = join(dir_path, file)
+            if file_types and file.endswith(file_types):
+                yield file_in_dir
+            else:
+                yield file
             else:
                 continue
 

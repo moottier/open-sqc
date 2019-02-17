@@ -11,6 +11,16 @@ from ccrev.data_processor import DataExtractor
 from ccrev.reports import Report
 from ccrev.rules import RuleChecker, Rule1, Rule2, Rule3, Rule4
 
+REVIEWER_CONFIG = {
+    config.REV_DATA_COL : config.DATA_COL,
+    config.REV_INDEX_COL: config.INDEX_COL,
+    config.REV_MIN_ROW: config.DATA_START_ROW,
+    config.REV_MAX_ROW: None,
+    config.REV_RULES: (Rule1, Rule2, Rule3, Rule4),
+    config.REV_ST_DEV: config.WS_STDEV_ADDR,
+    config.REV_MEAN: config.WS_MEAN_ADDR
+}
+
 
 class Reviewer:
     DefaultReport: Type[Report] = Report
@@ -100,14 +110,6 @@ class Reviewer:
 
 
 if __name__ == '__main__':
-    reviewer = Reviewer(
-        data_col=config.DATA_COL,
-        index_col=config.INDEX_COL,
-        min_row=config.DATA_START_ROW,
-        max_row=None,
-        rules=(Rule1, Rule2, Rule3, Rule4),
-        st_dev=config.WS_STDEV_ADDR,
-        mean=config.WS_MEAN_ADDR
-    )
+    reviewer = Reviewer(REVIEWER_CONFIG)
     reviewer.review(config.WORKING_DIR)
     reviewer.build_report(report_name=datetime.datetime.today(), save=True)

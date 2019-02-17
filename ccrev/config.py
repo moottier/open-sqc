@@ -18,3 +18,12 @@ WS_MEAN_ADDR: Tuple[int, int] = (2, 15)
 WS_STDEV_ADDR: Tuple[int, int] = (2, 16)
 EXCEL_FILE_EXTENSIONS = ('.xlsx', '.xlsm', '.xltx', '.xltm')
 CSV_FILE_EXTENSIONS = ('.csv',)
+
+#REVIEWER KWARGS
+REV_DATA_COL = 'data_col'
+REV_INDEX_COL = 'index_col'
+REV_MIN_ROW = 'min_row'
+REV_MAX_ROW = 'max_row'
+REV_RULES = 'rules'
+REV_ST_DEV = 'st_dev'
+REV_MEAN = 'mean'

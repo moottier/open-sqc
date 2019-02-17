@@ -3,12 +3,14 @@ from __future__ import annotations
 import unittest
 
 import ccrev.config
-import ccrev.data_processor
+from ccrev.data_processor import DataExtractor
 from ccrev import main
 import itertools
 from typing import List, Dict, Iterable
 
 # paths to excel files used to validated script
+from ccrev.main import Reviewer, REVIEWER_CONFIG
+
 METTLER_CHART = r'H:\code\ccrev\test\TA by Mettler- Rondo 1.xlsx'
 METHANOL_CHART = r'H:\code\ccrev\test\Methanol by GC.xlsx'
 PH1_CHART = r'H:\code\ccrev\test\pH by Orion #1 pH Meter.xlsx'
@@ -235,7 +237,8 @@ class TestDataProcessing(unittest.TestCase):
     make sure no data is lost during data analysis, formatting, or reporting
     """
     def setUp(self):
-        self.excel_files = [excel_file for excel_file in ccrev.data_processor.gen_excel_files(ccrev.config.PATH)]
+        self.excel_files = [excel_file for excel_file in DataExtractor.gen_files_from_dir(ccrev.config.PATH)]
+        self.reviewer = Reviewer(REVIEWER_CONFIG)
         # self.maxDiff = None
 
     def test_get_signals(self):
@@ -250,6 +253,7 @@ class TestDataProcessing(unittest.TestCase):
                         chart_signals,
                         signals_expected                        
                         )
+
 
 
 if __name__ == "__main__":
