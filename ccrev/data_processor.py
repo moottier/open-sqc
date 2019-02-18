@@ -1,19 +1,13 @@
 import os
-import warnings
-from numbers import Number
 from os.path import join
-from typing import List, Dict, Tuple, Union, Any, Generator
+from typing import List, Tuple, Union, Any, Generator
 
 import openpyxl
 import openpyxl.cell
 import openpyxl.utils.exceptions
-from openpyxl.utils.exceptions import ReadOnlyWorkbookException
 from openpyxl.workbook import Workbook
 from openpyxl.worksheet._read_only import ReadOnlyWorksheet
 from openpyxl.worksheet.worksheet import Worksheet
-
-from ccrev import config
-from ccrev.config import WS_MEAN_ADDR, WS_STDEV_ADDR
 
 
 class DataExtractor:
@@ -32,7 +26,7 @@ class DataExtractor:
     def get_data_gen(
             worksheet: Union[Worksheet, ReadOnlyWorksheet],
             min_col: int, max_col: int, min_row: int, max_row: int = None, values_only=True
-    ) -> Generator[Any]:
+    ) -> Generator[Any, None, None]:
         return worksheet.iter_rows(
                 min_row=min_row,
                 max_row=max_row,
@@ -51,7 +45,10 @@ class DataExtractor:
         ws = DataExtractor.get_worksheet(wb, worksheet_index)
         data_gen = DataExtractor.get_data_gen(ws, min_row=min_row, max_row=max_row, min_col=min_col, max_col=max_col,
                                               values_only=values_only)
-        data = [val for val in data_gen if val]
+        if min_col is max_col:
+            data = [val[0] for val in data_gen if val[0]]
+        else:
+            data = [vals for vals in data_gen if any(val for val in vals is not None)]
         return data
 
     @staticmethod

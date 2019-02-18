@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import unittest
-
-import ccrev.config
-from ccrev.data_processor import DataExtractor
-from ccrev import main, config
 import itertools
 import os
+import unittest
 from typing import List, Dict, Iterable
-from ccrev.main import Reviewer, REVIEWER_CONFIG
+
+import ccrev.config
+from ccrev import config
+from ccrev.data_processor import DataExtractor
 from ccrev.rules import RuleChecker, Rule1, Rule2, Rule3, Rule4
 
 # TODO I use 'chart', 'file', and 'excel_file' pretty interchangeable. clean that up.
@@ -50,7 +49,7 @@ SIGNALS_BY_HAND = {
         3: range(619, 625),
         4: range(335, 349),
     },
-    TEST_DATA_FILES[2]    : {
+    TEST_DATA_FILES[1]: {
         1: [287, 672, 864, 1046, ],
         2: itertools.chain(
                 range(17, 27),
@@ -159,78 +158,19 @@ def flatten_signals_dict(
     return reformatted_list
 
 
-# class TestRulesIndividually(unittest.TestCase):
-#     def setUp(self):
-#         # list of rules for convenience
-#         self.rules = [
-#             rules.Rule1,
-#             rules.Rule2,
-#             rules.Rule3,
-#             rules.Rule4,
-#         ]
-#
-#         # dict with keys equal to file paths specified above
-#         # values equal to openpyxl worksheet objects generated from those paths
-#         worksheets = {
-#             excel_file: main.get_data_sheet(excel_file) for excel_file in PATHS
-#         }
-#
-#         # dict with keys equal to file paths specified above
-#         # values data from worksheet objects in 'worksheets'
-#         self.worksheet_data = {
-#             excel_file: main.get_data(worksheet) for excel_file, worksheet in worksheets.items()
-#         }
-#
-#         # dict with keys equal to file paths specified above
-#         # values stats data from worksheet objects in 'worksheets'
-#         self.stats_data = {
-#             excel_file: main.get_stats_data(worksheet) for excel_file, worksheet in worksheets.items()
-#         }
-#
-#     def _test_rule(self, rule_to_check: int):
-#         for excel_file in PATHS:
-#             # main.main() returns a dict
-#
-#             calculated_signals = main.main(
-#                 data=self.worksheet_data[excel_file],
-#                 stats_data=self.stats_data[excel_file],
-#                 Rules=(self.rules[rule_to_check - 1],),
-#                 DEBUG=True
-#             )[excel_file]
-#
-#             reformatted_signals = flatten_signals_dict(SIGNALS_BY_HAND[excel_file], len(calculated_signals))
-#
-#             for signal_index, signal in enumerate(reformatted_signals):
-#                 if signal is rule_to_check:
-#                     with self.subTest(signal_index=signal_index):
-#                         self.assertEqual(
-#                             calculated_signals[signal_index].rule_number,
-#                             reformatted_signals[signal_index],
-#                             msg=f'File: {excel_file}'
-#                         )
-#
-#     def test_rule1(self):
-#         self._test_rule(1)
-#
-#     def test_rule2(self):
-#         self._test_rule(2)
-#
-#     def test_rule3(self):
-#         self._test_rule(3)
-#
-#     def test_rule4(self):
-#         self._test_rule(4)
-
-
 class TestExcelDataExtractor(unittest.TestCase):
-    def setUpClass(self):
-        self.data_extractor = DataExtractor
-        self.excel_files = [excel_file for excel_file in DataExtractor.gen_files_from_dir(ccrev.config.PATH)]
+    @classmethod
+    def setUpClass(cls):
+        cls.data_extractor = DataExtractor
+        cls.excel_files = [excel_file for excel_file in
+                           DataExtractor.gen_files_from_dir(ccrev.config.PATH, config.EXCEL_FILE_EXTENSIONS)]
 
     def test_gen_files_from_dir(self):
+        expected_files = [file for file in os.listdir(ccrev.config.PATH) if file.endswith(config.EXCEL_FILE_EXTENSIONS)]
+        data_extractor_files = [os.path.basename(file) for file in self.excel_files]
         self.assertEqual(
-                self.excel_files,
-                [file for file in os.listdir(ccrev.config.PATH) if file.endswith(ccrev.config.EXCEL_FILE_EXTENSIONS)]
+                data_extractor_files,
+                expected_files
         )
 
     def test_get_data(self):
@@ -239,6 +179,7 @@ class TestExcelDataExtractor(unittest.TestCase):
                     file,
                     min_col=config.DATA_COL,
                     max_col=config.DATA_COL,
+                    min_row=config.DATA_START_ROW,
                     worksheet_index=config.DATA_SHEET,
             ) for file in self.excel_files]
         for file_data in file_data_list:
@@ -246,27 +187,30 @@ class TestExcelDataExtractor(unittest.TestCase):
                     file_data,
                     List
             )
-            self.assertTrue(all(isinstance(value, float) for value in file_data))
+            self.assertTrue(all(isinstance(value, (float, int)) for value in file_data),
+                            msg=f'{[val for val in file_data if not isinstance(val, float)]}')
 
 
 class TestRuleChecker(unittest.TestCase):
-    def setUpClass(self):
-        self.rule_checker = RuleChecker(rules=(Rule1, Rule2, Rule3, Rule4))
-        self.excel_files = [excel_file for excel_file in DataExtractor.gen_files_from_dir(ccrev.config.PATH)]
-        self.data = [
+    @classmethod
+    def setUpClass(cls):
+        cls.rule_checker = RuleChecker(rules=(Rule1, Rule2, Rule3, Rule4))
+        cls.excel_files = [excel_file for excel_file in
+                           DataExtractor.gen_files_from_dir(ccrev.config.PATH, config.EXCEL_FILE_EXTENSIONS)]
+        cls.data = [
             DataExtractor.get_data(
                     file,
                     min_col=config.DATA_COL,
                     max_col=config.DATA_COL,
                     worksheet_index=config.DATA_SHEET,
-            ) for file in self.excel_files]
-        self.file_data_map = {excel_file: data for excel_file, data in zip(self.excel_files, self.data)}
+            ) for file in cls.excel_files]
+        cls.file_data_map = {excel_file: data for excel_file, data in zip(cls.excel_files, cls.data)}
 
     def setUp(self):
         self.signals = []
 
     def test_check_all(self):
-        for file, data in self.file_data_map:
+        for file, data in self.file_data_map.items():
             if file in TEST_DATA_FILES:
                 expected_signals = flatten_signals_dict(SIGNALS_BY_HAND[file], len(data))
                 signals = self.rule_checker.check_all_rules(data)

@@ -1,4 +1,5 @@
 from typing import Tuple
+import os
 
 PLOT_CENTER = 'center'
 PLOT_UAL = 'ual'
@@ -9,7 +10,8 @@ PLOT_DATA = 'data'
 ST_DEV = 'st_dev'
 MEAN = 'mean'
 WORKING_DIR = r'H:\code\ccrev\ccrev\output'
-PATH: str = r'H:\code\ccrev\test'
+PATH: str = os.getcwd()
+TEST_PATH: str = os.path.join(os.getcwd(), 'test')
 DATA_COL: int = 4  # 1 indexed
 INDEX_COL: int = 6
 DATA_SHEET: int = 0  # 0 indexed

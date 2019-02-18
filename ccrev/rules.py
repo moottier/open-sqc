@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from typing import List, TYPE_CHECKING, Union, Any, Dict, Type, Container, Sequence
+from typing import List, TYPE_CHECKING, Union, Any, Dict, Type, Sequence
 
 from ccrev.config import ST_DEV, MEAN
 
@@ -168,6 +168,7 @@ class Rule4(Rule):
     def is_positive(data: List[float], **stats_data) -> bool:
         return data[0] < data[1]
 
+
 # TODO return all signals as List[int]
 class RuleChecker:
     def __init__(self, rules: Sequence[Type[Rule]]):
@@ -224,7 +225,7 @@ class RuleChecker:
                     ):
                         signal: Signal = Signal(rule.rule_number, data_index)
                         signal._is_positive = rule.is_positive(
-                            data[data_index:data_index + rule.min_len_positivity_check]
+                                data[data_index:data_index + rule.min_len_positivity_check]
                         )
                     continue
 
@@ -284,8 +285,8 @@ class RuleChecker:
                             continue
 
         signals: List[Signal] = sorted(
-            [signal for signal_set in signals for signal in signal_set],
-            key=lambda signal: signal.start_index
+                [signal for signal_set in signals for signal in signal_set],
+                key=lambda signal: signal.start_index
         )  # flatten & sort
         return signals
 
