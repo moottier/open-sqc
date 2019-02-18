@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 from typing import List, TYPE_CHECKING, Union, Any, Dict, Type, Container, Sequence
 
-from ccrev.config import ST_DEV, MEAN, DEFAULT_RULES
+from ccrev.config import ST_DEV, MEAN
 
 if TYPE_CHECKING:
     pass
@@ -168,7 +168,7 @@ class Rule4(Rule):
     def is_positive(data: List[float], **stats_data) -> bool:
         return data[0] < data[1]
 
-
+# TODO return all signals as List[int]
 class RuleChecker:
     def __init__(self, rules: Sequence[Type[Rule]]):
         self.rules = rules
@@ -181,7 +181,7 @@ class RuleChecker:
 
     def check(
             self,
-            rule: Rule,
+            rule: Type[Rule],
             data: List[float],
             return_type: Any = int,  # TODO fully implement
             **stats_data,

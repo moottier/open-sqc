@@ -4,24 +4,19 @@ import unittest
 
 import ccrev.config
 from ccrev.data_processor import DataExtractor
-from ccrev import main
+from ccrev import main, config
 import itertools
+import os
 from typing import List, Dict, Iterable
-
-# paths to excel files used to validated script
 from ccrev.main import Reviewer, REVIEWER_CONFIG
+from ccrev.rules import RuleChecker, Rule1, Rule2, Rule3, Rule4
 
-METTLER_CHART = r'H:\code\ccrev\test\TA by Mettler- Rondo 1.xlsx'
-METHANOL_CHART = r'H:\code\ccrev\test\Methanol by GC.xlsx'
-PH1_CHART = r'H:\code\ccrev\test\pH by Orion #1 pH Meter.xlsx'
-PH2_CHART = r'H:\code\ccrev\test\pH by Orion #2 pH Meter.xlsx'
-
-# list of paths for convenience only
-PATHS = [
-    METTLER_CHART,
-    # METHANOL_CHART,
-    PH1_CHART,
-    # PH2_CHART,
+# TODO I use 'chart', 'file', and 'excel_file' pretty interchangeable. clean that up.
+TEST_DATA_FILES = [
+    r'H:\code\ccrev\test\TA by Mettler- Rondo 1.xlsx',
+    # r'H:\code\ccrev\test\Methanol by GC.xlsx',
+    r'H:\code\ccrev\test\pH by Orion #1 pH Meter.xlsx',
+    # r'H:\code\ccrev\test\pH by Orion #2 pH Meter.xlsx',
 ]
 
 # dictionary with keys equal to file paths
@@ -30,106 +25,100 @@ PATHS = [
 # signals were determined by hand (looking over control chart point by point)
 # used to validate the script
 SIGNALS_BY_HAND = {
-    METTLER_CHART: {
+    TEST_DATA_FILES[0]: {
         1: [178, 262, 388, 447, 472, ],
         2: itertools.chain(  # chain creates single iterable from iterables args
-            range(36, 49),
-            range(85, 108),  # range objects are [inclusive, exclusive)
-            range(110, 123),  # if excel data starts on row 2 then
-            range(131, 155),  # range(36, 48) corresponds to data in excel rows 38-49
-            range(165, 215),
-            range(239, 253),
-            range(270, 278),
-            range(293, 301),
-            range(372, 388),
-            range(409, 417),
-            range(423, 436),
-            range(448, 472),
-            range(479, 491),
-            range(492, 504),
-            range(522, 531),
-            range(565, 574),
-            range(578, 587),
-            range(593, 605),
+                range(36, 49),
+                range(85, 108),  # range objects are [inclusive, exclusive)
+                range(110, 123),  # if excel data starts on row 2 then
+                range(131, 155),  # range(36, 48) corresponds to data in excel rows 38-49
+                range(165, 215),
+                range(239, 253),
+                range(270, 278),
+                range(293, 301),
+                range(372, 388),
+                range(409, 417),
+                range(423, 436),
+                range(448, 472),
+                range(479, 491),
+                range(492, 504),
+                range(522, 531),
+                range(565, 574),
+                range(578, 587),
+                range(593, 605),
         ),
         3: range(619, 625),
         4: range(335, 349),
     },
-    PH1_CHART: {
+    TEST_DATA_FILES[2]    : {
         1: [287, 672, 864, 1046, ],
         2: itertools.chain(
-            range(17, 27),
-            range(54, 65),
-            range(79, 93),
-            range(106, 120),
-            range(122, 131),
-            range(136, 146),
-            range(150, 163),
-            range(187, 197),
-            range(199, 216),
-            range(216, 231),
-            range(231, 241),
-            range(241, 255),
-            range(265, 274),
-            range(274, 283),
-            range(311, 322),
-            range(325, 333),
-            range(334, 357),
-            range(358, 378),
-            range(274, 283),
-            range(383, 393),
-            range(393, 409),
-            range(409, 422),
-            range(422, 435),
-            range(450, 479),
-            range(481, 492),
-            range(492, 501),
-            range(513, 521),
-            range(521, 534),
-            range(534, 544),
-            range(544, 552),
-            range(554, 568),
-            range(568, 582),
-            range(585, 593),
-            range(593, 606),
-            range(606, 623),
-            range(627, 644),
-            range(644, 665),
-            range(673, 681),
-            range(684, 696),
-            range(702, 714),
-            range(723, 736),
-            range(771, 783),
-            range(796, 813),
-            range(821, 834),
-            range(843, 856),
-            range(865, 873),
-            range(880, 889),
-            range(890, 901),
-            range(906, 918),
-            range(923, 934),
-            range(949, 958),
-            range(966, 982),
-            range(986, 998),
-            range(999, 1015),
-            range(1026, 1040),
-            range(1047, 1065),
-            range(1073, 1087),
-            range(1112, 1120),
+                range(17, 27),
+                range(54, 65),
+                range(79, 93),
+                range(106, 120),
+                range(122, 131),
+                range(136, 146),
+                range(150, 163),
+                range(187, 197),
+                range(199, 216),
+                range(216, 231),
+                range(231, 241),
+                range(241, 255),
+                range(265, 274),
+                range(274, 283),
+                range(311, 322),
+                range(325, 333),
+                range(334, 357),
+                range(358, 378),
+                range(274, 283),
+                range(383, 393),
+                range(393, 409),
+                range(409, 422),
+                range(422, 435),
+                range(450, 479),
+                range(481, 492),
+                range(492, 501),
+                range(513, 521),
+                range(521, 534),
+                range(534, 544),
+                range(544, 552),
+                range(554, 568),
+                range(568, 582),
+                range(585, 593),
+                range(593, 606),
+                range(606, 623),
+                range(627, 644),
+                range(644, 665),
+                range(673, 681),
+                range(684, 696),
+                range(702, 714),
+                range(723, 736),
+                range(771, 783),
+                range(796, 813),
+                range(821, 834),
+                range(843, 856),
+                range(865, 873),
+                range(880, 889),
+                range(890, 901),
+                range(906, 918),
+                range(923, 934),
+                range(949, 958),
+                range(966, 982),
+                range(986, 998),
+                range(999, 1015),
+                range(1026, 1040),
+                range(1047, 1065),
+                range(1073, 1087),
+                range(1112, 1120),
         ),
         3: None,
         4: None,
     },
-    # PH2_CHART: {
-    #     1: ,
-    #     2: ,
-    #     3: ,
-    #     4: ,    
-    # },
 }
 
 
-def reformat_SIGNALS_BY_HAND(
+def flatten_signals_dict(
         chart_signals: Dict[int, Iterable[int]],
         length: int
 ) -> List[int]:
@@ -155,6 +144,7 @@ def reformat_SIGNALS_BY_HAND(
 
     [0, 1, 1, 0, 1, 0, 2, 0, 4, 0, 0]
     """
+
     reformatted_list = [0] * length
 
     for rule_number, data_indexes in chart_signals.items():
@@ -208,7 +198,7 @@ def reformat_SIGNALS_BY_HAND(
 #                 DEBUG=True
 #             )[excel_file]
 #
-#             reformatted_signals = reformat_SIGNALS_BY_HAND(SIGNALS_BY_HAND[excel_file], len(calculated_signals))
+#             reformatted_signals = flatten_signals_dict(SIGNALS_BY_HAND[excel_file], len(calculated_signals))
 #
 #             for signal_index, signal in enumerate(reformatted_signals):
 #                 if signal is rule_to_check:
@@ -232,34 +222,56 @@ def reformat_SIGNALS_BY_HAND(
 #         self._test_rule(4)
 
 
-class TestDataProcessing(unittest.TestCase):
-    """
-    make sure no data is lost during data analysis, formatting, or reporting
-    """
-    def setUp(self):
+class TestExcelDataExtractor(unittest.TestCase):
+    def setUpClass(self):
+        self.data_extractor = DataExtractor
         self.excel_files = [excel_file for excel_file in DataExtractor.gen_files_from_dir(ccrev.config.PATH)]
-        self.reviewer = Reviewer(REVIEWER_CONFIG)
-        # self.maxDiff = None
 
-    def test_get_signals(self):
-        for excel_file in self.excel_files:
+    def test_gen_files_from_dir(self):
+        self.assertEqual(
+                self.excel_files,
+                [file for file in os.listdir(ccrev.config.PATH) if file.endswith(ccrev.config.EXCEL_FILE_EXTENSIONS)]
+        )
 
-            if excel_file in SIGNALS_BY_HAND.keys():
-                chart_signals = main.get_signals(excel_file)
-                chart_signals = [signal.rule_number for signal in chart_signals]
-                signals_expected = reformat_SIGNALS_BY_HAND(SIGNALS_BY_HAND[excel_file], len(chart_signals))
-                with self.subTest(excel_file=excel_file):
-                    self.assertEqual(
-                        chart_signals,
-                        signals_expected                        
-                        )
+    def test_get_data(self):
+        file_data_list = [
+            self.data_extractor.get_data(
+                    file,
+                    min_col=config.DATA_COL,
+                    max_col=config.DATA_COL,
+                    worksheet_index=config.DATA_SHEET,
+            ) for file in self.excel_files]
+        for file_data in file_data_list:
+            self.assertIsInstance(
+                    file_data,
+                    List
+            )
+            self.assertTrue(all(isinstance(value, float) for value in file_data))
 
 
 class TestRuleChecker(unittest.TestCase):
     def setUpClass(self):
-        self.
+        self.rule_checker = RuleChecker(rules=(Rule1, Rule2, Rule3, Rule4))
+        self.excel_files = [excel_file for excel_file in DataExtractor.gen_files_from_dir(ccrev.config.PATH)]
+        self.data = [
+            DataExtractor.get_data(
+                    file,
+                    min_col=config.DATA_COL,
+                    max_col=config.DATA_COL,
+                    worksheet_index=config.DATA_SHEET,
+            ) for file in self.excel_files]
+        self.file_data_map = {excel_file: data for excel_file, data in zip(self.excel_files, self.data)}
 
+    def setUp(self):
+        self.signals = []
 
+    def test_check_all(self):
+        for file, data in self.file_data_map:
+            if file in TEST_DATA_FILES:
+                expected_signals = flatten_signals_dict(SIGNALS_BY_HAND[file], len(data))
+                signals = self.rule_checker.check_all_rules(data)
+                with self.subTest(file=file):
+                    self.assertEqual(signals, expected_signals)
 
 
 if __name__ == "__main__":
