@@ -1,6 +1,8 @@
 from typing import Tuple
 import os
 
+from ccrev.rules import Rule1, Rule2, Rule3, Rule4
+
 PLOT_CENTER = 'center'
 PLOT_UAL = 'ual'
 PLOT_LAL = 'lal'
@@ -21,11 +23,12 @@ WS_STDEV_ADDR: Tuple[int, int] = (2, 16)
 EXCEL_FILE_EXTENSIONS = ('.xlsx', '.xlsm', '.xltx', '.xltm')
 CSV_FILE_EXTENSIONS = ('.csv',)
 
-#REVIEWER KWARGS
-REV_DATA_COL = 'data_col'
-REV_INDEX_COL = 'index_col'
-REV_MIN_ROW = 'min_row'
-REV_MAX_ROW = 'max_row'
-REV_RULES = 'rules'
-REV_ST_DEV = 'st_dev'
-REV_MEAN = 'mean'
+REVIEWER_KWARGS = {
+    'data_col' : DATA_COL,
+    'index_col': INDEX_COL,
+    'min_row'  : DATA_START_ROW,
+    'max_row'  : None,
+    'rules'    : (Rule1, Rule2, Rule3, Rule4),
+    'st_dev'   : WS_STDEV_ADDR,
+    'mean'     : WS_MEAN_ADDR
+}

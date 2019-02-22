@@ -9,17 +9,7 @@ from ccrev import config
 from ccrev.charts.chart_base import ControlChart
 from ccrev.data_processor import DataExtractor
 from ccrev.reports import Report
-from ccrev.rules import RuleChecker, Rule1, Rule2, Rule3, Rule4
-
-REVIEWER_CONFIG = {
-    config.REV_DATA_COL : config.DATA_COL,
-    config.REV_INDEX_COL: config.INDEX_COL,
-    config.REV_MIN_ROW  : config.DATA_START_ROW,
-    config.REV_MAX_ROW  : None,
-    config.REV_RULES    : (Rule1, Rule2, Rule3, Rule4),
-    config.REV_ST_DEV   : config.WS_STDEV_ADDR,
-    config.REV_MEAN     : config.WS_MEAN_ADDR
-}
+from ccrev.rules import RuleChecker
 
 
 class Reviewer:
@@ -111,6 +101,6 @@ class Reviewer:
 
 
 if __name__ == '__main__':
-    reviewer = Reviewer(REVIEWER_CONFIG)
+    reviewer = Reviewer(config.REVIEWER_KWARGS)
     reviewer.review(config.WORKING_DIR)
     reviewer.build_report(report_name=datetime.datetime.today(), save=True)

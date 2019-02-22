@@ -30,8 +30,8 @@ SIGNALS_BY_HAND = {
                 range(36, 49),
                 range(85, 108),  # range objects are [inclusive, exclusive)
                 range(110, 123),  # if excel data starts on row 2 then
-                range(131, 155),  # range(36, 48) corresponds to data in excel rows 38-49
-                range(165, 215),
+                range(131, 155),  # excel rows 38-49 correspond to range(36, 48)
+                range(165, 215),  # range(36, 48) corresponds to excel rows 38-49
                 range(239, 253),
                 range(270, 278),
                 range(293, 301),
@@ -202,9 +202,39 @@ class TestRuleChecker(unittest.TestCase):
                     file,
                     min_col=config.DATA_COL,
                     max_col=config.DATA_COL,
+                    min_row=config.DATA_START_ROW,
                     worksheet_index=config.DATA_SHEET,
             ) for file in cls.excel_files]
+        cls.st_devs = [
+            DataExtractor.get_data(
+                    file,
+                    min_col=config.WS_STDEV_ADDR[1],
+                    max_col=config.WS_STDEV_ADDR[1],
+                    min_row=config.WS_STDEV_ADDR[0],
+                    max_row=config.WS_STDEV_ADDR[0],
+                    worksheet_index=config.DATA_SHEET,
+            ) for file in cls.excel_files]
+        cls.means = [
+            DataExtractor.get_data(
+                    file,
+                    min_col=config.WS_MEAN_ADDR[1],
+                    max_col=config.WS_MEAN_ADDR[1],
+                    min_row=config.WS_MEAN_ADDR[0],
+                    max_row=config.WS_MEAN_ADDR[0],
+                    worksheet_index=config.DATA_SHEET,
+            ) for file in cls.excel_files]
+
         cls.file_data_map = {excel_file: data for excel_file, data in zip(cls.excel_files, cls.data)}
+        cls.file_st_devs_map = {
+            excel_file: st_dev for
+            excel_file, st_dev in
+            zip(cls.excel_files, cls.st_devs)
+        }
+        cls.file_means_map = {
+            excel_file: mean for
+            excel_file, mean in
+            zip(cls.excel_files, cls.means)
+        }
 
     def setUp(self):
         self.signals = []
@@ -212,10 +242,14 @@ class TestRuleChecker(unittest.TestCase):
     def test_check_all(self):
         for file, data in self.file_data_map.items():
             if file in TEST_DATA_FILES:
+                stats_data = {
+                    'mean': self.file_means_map[file],
+                    'stdev': self.file_st_devs_map[file]
+                }
                 expected_signals = flatten_signals_dict(SIGNALS_BY_HAND[file], len(data))
-                signals = self.rule_checker.check_all_rules(data)
+                signals = self.rule_checker.check_all_rules(data, return_type=int, **stats_data)
                 with self.subTest(file=file):
-                    self.assertEqual(signals, expected_signals)
+                    self.assertEqual(signals, expected_signals, msg='%s: failed' % file)
 
 
 if __name__ == "__main__":

@@ -45,7 +45,10 @@ class DataExtractor:
         ws = DataExtractor.get_worksheet(wb, worksheet_index)
         data_gen = DataExtractor.get_data_gen(ws, min_row=min_row, max_row=max_row, min_col=min_col, max_col=max_col,
                                               values_only=values_only)
-        if min_col is max_col:
+
+        if min_col is max_col and min_row is max_row:
+            data = [val[0] for val in data_gen if val[0]][0]
+        elif min_col is max_col:
             data = [val[0] for val in data_gen if val[0]]
         else:
             data = [vals for vals in data_gen if any(val for val in vals is not None)]
