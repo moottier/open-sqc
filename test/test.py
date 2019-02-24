@@ -7,7 +7,7 @@ from typing import List, Dict, Iterable
 
 import ccrev.config
 from ccrev import config
-from ccrev.data_processor import DataExtractor
+from ccrev.data_processing import DataExtractor
 from ccrev.rules import Rule1, Rule2, Rule3, Rule4
 from ccrev.rule_checking import RuleChecker
 
