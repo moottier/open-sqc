@@ -9,7 +9,7 @@ from ccrev import config
 from ccrev.charts.chart_base import ControlChart
 from ccrev.data_processor import DataExtractor
 from ccrev.reports import Report
-from ccrev.rules import RuleChecker
+from ccrev.rule_checking import RuleChecker
 
 
 class Reviewer:

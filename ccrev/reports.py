@@ -81,7 +81,6 @@ class Report:
         self.add_spacer()
         self.add_image(chart.save_plot_as_jpeg())
 
-
     def save(self):
         self._report.build(self._text)
 

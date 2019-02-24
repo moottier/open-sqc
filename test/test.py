@@ -8,7 +8,8 @@ from typing import List, Dict, Iterable
 import ccrev.config
 from ccrev import config
 from ccrev.data_processor import DataExtractor
-from ccrev.rules import RuleChecker, Rule1, Rule2, Rule3, Rule4
+from ccrev.rules import Rule1, Rule2, Rule3, Rule4
+from ccrev.rule_checking import RuleChecker
 
 # TODO I use 'chart', 'file', and 'excel_file' pretty interchangeable. clean that up.
 TEST_DATA_FILES = [
@@ -17,6 +18,7 @@ TEST_DATA_FILES = [
     r'H:\code\ccrev\test\pH by Orion #1 pH Meter.xlsx',
     # r'H:\code\ccrev\test\pH by Orion #2 pH Meter.xlsx',
 ]
+TEST_DATA_FILES = [os.path.basename(file) for file in TEST_DATA_FILES]
 
 # dictionary with keys equal to file paths
 # key values are dictionaries with keys equal to a rule number
@@ -195,7 +197,7 @@ class TestRuleChecker(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.rule_checker = RuleChecker(rules=(Rule1, Rule2, Rule3, Rule4))
-        cls.excel_files = [excel_file for excel_file in
+        cls.excel_files = [os.path.basename(excel_file) for excel_file in
                            DataExtractor.gen_files_from_dir(ccrev.config.PATH, config.EXCEL_FILE_EXTENSIONS)]
         cls.data = [
             DataExtractor.get_data(
