@@ -12,6 +12,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from ccrev import config
 from ccrev.charts.chart_base import ControlChart
+from ccrev.config import EXCEL_FILE_EXTENSIONS
 from ccrev.reporting import Report
 from ccrev.rule_checking import RuleChecker
 
@@ -21,15 +22,61 @@ class DataExtractor:
         pass
 
     @staticmethod
-    def get_worksheet(workbook: Workbook, sheet_index: int) -> Union[Worksheet, ReadOnlyWorksheet]:
-        return workbook.worksheets[sheet_index]
+    def get_excel_data(
+            src_file, min_row=None, max_row=None, min_col=None, max_col=None, worksheet_index=None,
+            read_only=True, data_only=True, values_only=True
+    ) -> List[Any]:
+
+        wb = DataExtractor.load_workbook(
+                src_file,
+                read_only=read_only,
+                data_only=data_only
+        )
+        ws = DataExtractor.load_worksheet(
+                wb,
+                worksheet_index
+        )
+        data_iter = DataExtractor._get_data_iter(
+                ws,
+                min_row=min_row,
+                max_row=max_row,
+                min_col=min_col,
+                max_col=max_col,
+                values_only=values_only
+        )
+
+        if min_col is max_col and min_row is max_row:
+            # data from single cell
+            data = [val[0] for val in data_iter if val[0]][0]
+        elif min_col is max_col:
+            # data from single column
+            data = [val[0] for val in data_iter if val[0]]
+        else:
+            # data from contiguous columns
+            data = [vals for vals in data_iter if any(val for val in vals is not None)]
+        return data
 
     @staticmethod
-    def get_workbook(file, read_only=True, data_only=True) -> Workbook:
+    def gen_files(src_dir: str, file_types: Union[str, Tuple[str]] = None):
+        for file in os.listdir(src_dir):
+            file_in_dir = join(src_dir, file)
+            if file_types and file.endswith(file_types):
+                yield file_in_dir
+            elif not file_types:
+                yield file
+            else:
+                continue
+
+    @staticmethod
+    def load_workbook(file, read_only=True, data_only=True) -> Workbook:
         return openpyxl.load_workbook(file, read_only=read_only, data_only=data_only)
 
     @staticmethod
-    def get_data_gen(
+    def load_worksheet(workbook: Workbook, sheet_index: int) -> Union[Worksheet, ReadOnlyWorksheet]:
+        return workbook.worksheets[sheet_index]
+
+    @staticmethod
+    def _get_data_iter(
             worksheet: Union[Worksheet, ReadOnlyWorksheet],
             min_col: int, max_col: int, min_row: int, max_row: int = None, values_only=True
     ) -> Generator[Any, None, None]:
@@ -41,54 +88,7 @@ class DataExtractor:
                 values_only=values_only
         )
 
-    @staticmethod
-    def get_data(
-            file, min_row=None, max_row=None, min_col=None, max_col=None, worksheet_index=None,
-            read_only=True, data_only=True, values_only=True
-    ) -> List[Any]:
 
-        wb = DataExtractor.get_workbook(file, read_only=read_only, data_only=data_only)
-        ws = DataExtractor.get_worksheet(wb, worksheet_index)
-        data_gen = DataExtractor.get_data_gen(ws, min_row=min_row, max_row=max_row, min_col=min_col, max_col=max_col,
-                                              values_only=values_only)
-
-        if min_col is max_col and min_row is max_row:
-            data = [val[0] for val in data_gen if val[0]][0]
-        elif min_col is max_col:
-            data = [val[0] for val in data_gen if val[0]]
-        else:
-            data = [vals for vals in data_gen if any(val for val in vals is not None)]
-        return data
-
-    @staticmethod
-    def gen_files_from_dir(dir_path: str, file_types: Union[str, Tuple[str]] = None):
-        for file in os.listdir(dir_path):
-            file_in_dir = join(dir_path, file)
-            if file_types and file.endswith(file_types):
-                yield file_in_dir
-            elif not file_types:
-                yield file
-            else:
-                continue
-
-# def process_chart(chart: ChartData, rules_to_check: Sequence[Type[rules.Rule]]) -> None:
-#     """
-#     main driver for the script
-#     mutates parm chart's 'signals' attribute
-#
-#     chart.signals will be a list of rule numbers
-#     that correspond to the violations of rules at the same index in chart.data
-#     """
-#
-#     def get_signals(data: List[Number], rules_to_check, checker: rules.RuleChecker):
-#         for rule in rules_to_check:
-#             for data_index in range(len(data)):
-#                 checker.check(rule, data_index)
-#         pass
-#
-#     rule_checker = rules.RuleChecker()
-#     rule_checker.chart = chart
-#     get_signals(rule_checker.chart.data, rules_to_check, rule_checker)
 class Reviewer:
     DefaultReport: Type[Report] = Report
 
@@ -103,13 +103,19 @@ class Reviewer:
         self.chart_type: Type[ControlChart] = chart_type
 
         self.report: Report = report_type if report_type else Reviewer.DefaultReport
-        self.extractor: DataExtractor = DataExtractor()
+        self.data_extractor: DataExtractor = DataExtractor()
         self.rule_checker: RuleChecker = RuleChecker(rules=rules)
 
-        self.reviewed_data = []
+        # uses filenames as keys
+        # values are list of data, list of data index, stats data, control chart type
+        self.data: Dict[str, List[List[float], List[Any], Dict[str, float], Type[ControlChart]]] = {}
         self._active_data = None
 
-    def make_control_chart(self, data, signals, chart_type: Type[ControlChart], **stats_data) -> ControlChart:
+    @staticmethod
+    def _data_factory(data: List[float], data_index=None, stats_values=None, control_chart:Type[ControlChart]=None) -> List:
+        return [data, data_index, stats_values, control_chart]
+
+    def control_chart_factory(self, data, signals, chart_type: Type[ControlChart], **stats_data) -> ControlChart:
         return self.chart_type(
                 data=data,
                 signals=signals,
@@ -117,48 +123,61 @@ class Reviewer:
                 stats_data=stats_data
         )
 
-    def review(self, data_source):
+    def check_all_rules(self, data_source):
         data, data_index = self.get_data(data_source)
         if isinstance(data[0], List):
             for index, data_set in enumerate(data_source):
                 self._active_data = data_set[index]
                 signals = self.rule_checker.check_all_rules(self._active_data)
-                chart = self.make_control_chart(
+                chart = self.control_chart_factory(
                         data=data_set[index], signals=signals, chart_type=self.chart_type,
                         stats_data=self.get_stats_data()
                 )
-                self.reviewed_data.append(chart)
+                self.data.append(chart)
                 self._active_data = None
         else:
             self._active_data = data
             signals = self.rule_checker.check_all_rules(self._active_data)
-            chart = self.make_control_chart(
+            chart = self.control_chart_factory(
                     data=data, signals=signals, chart_type=self.chart_type, stats_data=self.get_stats_data()
             )
-            self.reviewed_data.append(chart)
+            self.data.append(chart)
         self._active_data = None
 
-    def get_data(self, data_source):
-        data = self.extractor.get_data(
-                data_source,
-                col=self.data_col,
+    def get_data(self, src_file: str) -> Tuple[List[float], List]:
+        if not src_file.endswith(EXCEL_FILE_EXTENSIONS):
+            # TODO handle CSVs
+            raise NotImplementedError
+
+        data = self.data_extractor.get_excel_data(
+                src_file,
+                min_col=self.data_col,
+                max_col=self.data_col,
                 min_row=self.min_row,
+                max_row=self.max_row,
                 worksheet_index=self.data_sheet_index
         )
-        data_index = self.extractor.get_data(
-                data_source,
-                col=self.index_col,
+        data_index = self.data_extractor.get_excel_data(
+                src_file,
+                min_col=self.index_col,
+                max_col=self.index_col,
                 min_row=self.min_row,
+                max_row=self.max_row,
                 worksheet_index=self.data_sheet_index
         )
         return data, data_index
 
+    def add_data(self, src_file: str):
+        data, data_index = self.get_data(src_file)
+        self.data[src_file] = Reviewer._data_factory(data, data_index, )
+
+
     def get_stats_data(self) -> Dict:
-        st_dev = self.extractor.get_data(
+        st_dev = self.data_extractor.get_excel_data(
                 address=self.stats_data_addresses[config.ST_DEV], worksheet_index=self.data_sheet_index
         ) if self.stats_data_addresses[config.ST_DEV] else statistics.stdev(self._active_data)
 
-        mean = self.extractor.get_data(
+        mean = self.data_extractor.get_excel_data(
                 address=self.stats_data_addresses[config.MEAN]
         ) if self.stats_data_addresses[config.MEAN] else statistics.mean(self._active_data)
 
@@ -166,7 +185,7 @@ class Reviewer:
 
     def build_report(self, report_name=None, save=True):
         self.report = Reviewer.DefaultReport()
-        for reviewed_chart in self.reviewed_data:
+        for reviewed_chart in self.data:
             self.report.add_chart(reviewed_chart)
         self.report.name = report_name
 

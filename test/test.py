@@ -165,7 +165,7 @@ class TestExcelDataExtractor(unittest.TestCase):
     def setUpClass(cls):
         cls.data_extractor = DataExtractor
         cls.excel_files = [excel_file for excel_file in
-                           DataExtractor.gen_files_from_dir(ccrev.config.PATH, config.EXCEL_FILE_EXTENSIONS)]
+                           DataExtractor.gen_files(ccrev.config.PATH, config.EXCEL_FILE_EXTENSIONS)]
 
     def test_gen_files_from_dir(self):
         expected_files = [file for file in os.listdir(ccrev.config.PATH) if file.endswith(config.EXCEL_FILE_EXTENSIONS)]
@@ -177,7 +177,7 @@ class TestExcelDataExtractor(unittest.TestCase):
 
     def test_get_data(self):
         file_data_list = [
-            self.data_extractor.get_data(
+            self.data_extractor.get_excel_data(
                     file,
                     min_col=config.DATA_COL,
                     max_col=config.DATA_COL,
@@ -198,9 +198,9 @@ class TestRuleChecker(unittest.TestCase):
     def setUpClass(cls):
         cls.rule_checker = RuleChecker(rules=(Rule1, Rule2, Rule3, Rule4))
         cls.excel_files = [os.path.basename(excel_file) for excel_file in
-                           DataExtractor.gen_files_from_dir(ccrev.config.PATH, config.EXCEL_FILE_EXTENSIONS)]
+                           DataExtractor.gen_files(ccrev.config.PATH, config.EXCEL_FILE_EXTENSIONS)]
         cls.data = [
-            DataExtractor.get_data(
+            DataExtractor.get_excel_data(
                     file,
                     min_col=config.DATA_COL,
                     max_col=config.DATA_COL,
@@ -208,7 +208,7 @@ class TestRuleChecker(unittest.TestCase):
                     worksheet_index=config.DATA_SHEET,
             ) for file in cls.excel_files]
         cls.st_devs = [
-            DataExtractor.get_data(
+            DataExtractor.get_excel_data(
                     file,
                     min_col=config.WS_STDEV_ADDR[1],
                     max_col=config.WS_STDEV_ADDR[1],
@@ -217,7 +217,7 @@ class TestRuleChecker(unittest.TestCase):
                     worksheet_index=config.DATA_SHEET,
             ) for file in cls.excel_files]
         cls.means = [
-            DataExtractor.get_data(
+            DataExtractor.get_excel_data(
                     file,
                     min_col=config.WS_MEAN_ADDR[1],
                     max_col=config.WS_MEAN_ADDR[1],
@@ -252,6 +252,11 @@ class TestRuleChecker(unittest.TestCase):
                 signals = self.rule_checker.check_all_rules(data, return_type=int, **stats_data)
                 with self.subTest(file=file):
                     self.assertEqual(signals, expected_signals, msg='%s: failed' % file)
+
+
+class TestReviewer(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
 
 
 if __name__ == "__main__":
