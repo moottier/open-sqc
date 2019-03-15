@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+{% block content %}
+    <style type="text/css">
+        .container{
+            border: 3px solid green;
+        }
+        .top{}
+        .left{}
+        .right{}
+        .bottom{}
+        .item{
+            position: relative
+        }
+    </style>
+    <div class="container top item">
+        <p><a href="">Menu</a> ------ <a href="">Config</a> --- <a href="">Report</a> --- <a href="">Help</a></p>
+    </div>
+    <div class="container left">
+        <div class="container top" id="chart-interface">
+            {% if files %}
+                {% for file in files %}
+                <div class="container loaded-file" id="{{ file }}">
+                    <span>
+                        <span class="chart-name">{{ file }}</span>---- Select
+                        <select name="{{ file }}">
+                            {% for chart_type in chart_types %}
+                            <option value="{{ chart_type }}">{{ chart_type }}</option>
+                            {% endfor %}
+                        </select>
+                        <a class="up arrow">&uarr;</a>/
+                        <a class="down arrow">&darr;</a> --
+                        <a class="delete">X</a>
+                    </span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="container loaded-file" id="{{ file }}">
+                    <span>
+                        <p>Nothing loaded. Click below to load</p>
+                    </span>
+                </div>
+            {% endif %}
+        </div>
+        <div class="container bottom">
+            <div>
+                <input type="file" />​
+                <p><a href="">Add Item</a></p>
+            </div>
+            <div>
+                <p><a href="">Preview</a> --- <a href="">Report</a></p>
+            </div>
+        </div>
+    </div>
+    <div class="container right">
+        <div>
+            <p id="chart-title">Chart Title</p>
+        </div>
+        <div>
+            <div>
+                <p id="chart">Chart</p>
+            </div>
+            <div>
+                <p>Chart Legend</p>
+            </div>
+        </div>
+        <div>
+            <div>
+                <p>Show signals</p>
+            </div>
+            <div>
+                <p>Issues --- <a href="">Next Chart</a>/<a href="">Previous</a></p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

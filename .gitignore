@@ -3,7 +3,8 @@
 *code-workspace
 
 #pyc's
-/__pycache__/**
+*/__pycache__/**
+*pyc
 
 #pycharm
 /.idea/**

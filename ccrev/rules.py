@@ -4,8 +4,8 @@ import abc
 from typing import List
 
 # TODO should be declared elsewhere
-
-ST_DEV, MEAN = 'stdev', 'mean'
+# cant import from config because circular imports
+ST_DEV, MEAN = 'st_dev', 'mean'
 
 
 class Rule:

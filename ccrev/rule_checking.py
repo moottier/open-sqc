@@ -2,7 +2,6 @@ import copy
 import itertools
 from typing import Sequence, Type, List, Any, Union, Tuple
 
-#if TYPE_CHECKING:
 from ccrev.rules import Rule, Signal
 
 
@@ -31,8 +30,8 @@ class RuleChecker:
 
         signal: Signal = None
         for data_index, datum in enumerate(data):
-            print('')
-            if self._signals and any(data_index in signal for signal in self._signals):  # if signal already detected at data_index
+            # if signal already detected at data_index
+            if self._signals and any(data_index in signal for signal in self._signals):
                 if signal:
                     self._signals.append(signal)
                     signal = None  # update signal list and clear signal if signal detected for data index
@@ -41,10 +40,10 @@ class RuleChecker:
             if signal:
                 min_len_continuation_check = rule.min_len_continuation_check or 0
                 if rule.is_continued(
-                        data[data_index-min_len_continuation_check:data_index+1],
+                        data[data_index - min_len_continuation_check:data_index + 1],
                         signal._is_positive,
                         signal,
-                        **stats_data# TODO, why need pass signal._is_positive && signal??
+                        **stats_data  # TODO, why need pass signal._is_positive && signal??
                 ):  # if data point continues signal
                     signal.end_index += 1
                 else:
@@ -55,7 +54,7 @@ class RuleChecker:
                 if len(data[data_index:data_index + rule.min_len_check]) is not rule.min_len_check:
                     continue  # don't check for signals near end of data set
                 elif self._signals and any(data_index in self._signals for
-                         data_index in range(data_index, data_index + rule.min_len_check)):
+                                           data_index in range(data_index, data_index + rule.min_len_check)):
                     continue  # don't check for signals if signal in remaining data
                 else:
                     if rule.check(
@@ -64,7 +63,7 @@ class RuleChecker:
                     ):
                         signal: Signal = Signal(rule.rule_number, data_index)
                         signal._is_positive = rule.is_positive(
-                                data[data_index:data_index + rule.min_len_positivity_check], **stats_data
+                            data[data_index:data_index + rule.min_len_positivity_check], **stats_data
                         )
                     continue
         signal and self._signals.append(signal)  # for signal that goes to end of dataset append to signals
@@ -75,7 +74,7 @@ class RuleChecker:
         return signal
 
     # TODO get rid of this 'return_type' stuff it's wonky
-    def check_all_rules(self, data, return_type=int, **stats_data) -> List[int]:
+    def check_all_rules(self, data, **stats_data) -> List[int]:
         signals = []
         for rule in self.rules:
             found_signals = self.check(rule, data, return_type=Signal, **stats_data)
@@ -119,19 +118,19 @@ class RuleChecker:
                 # lower priority signal can be shortened at front/end
                 is_shortenable_start = is_overlapped_start and \
                                        is_shortenable(
-                                               remaining_signal,
-                                               remaining_signal.start_index,
-                                               signal.end_index
+                                           remaining_signal,
+                                           remaining_signal.start_index,
+                                           signal.end_index
                                        )
                 is_shortenable_end = is_overlapped_end and \
                                      is_shortenable(
-                                             remaining_signal,
-                                             signal.start_index,
-                                             remaining_signal.end_index
+                                         remaining_signal,
+                                         signal.start_index,
+                                         remaining_signal.end_index
                                      )
 
-                #1 1 0 1 1 1 0 0
-                #2 2 2 2 0 2 2 2
+                # 1 1 0 1 1 1 0 0
+                # 2 2 2 2 0 2 2 2
 
                 if is_shortenable_end and is_shortenable_start:
                     remaining_signal, new_signal = split(remaining_signal, signal.end_index)

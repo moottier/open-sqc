@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" content="width=device-width, initial-scale=1.0">
+    <title>Hello from Flask</title>
+    <style type="text/css">
+        div.container {
+            max-width: 700px;
+            padding-top: 100px;
+            margin: auto;
+            display: flow-root;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+    <script type="text/javascript" src="{{ url_for('static', filename='index.js') }}">
+        $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    </script>
+</body>
+</html>
