@@ -1,0 +1,21 @@
+            {% if titles %}
+                {% for title in titles %}
+                <div class="container" id="{{ title }}">
+                    <span>
+                        <span class="chart-name">{{ title }}</span>---- Select
+                        <select name="{{ title }}">
+                            {% for chart_type in chart_types %}
+                            <option value="{{ chart_type }}">{{ chart_type }}</option>
+                            {% endfor %}
+                        </select>
+                        <a class="up arrow">&uarr;</a>/
+                        <a class="down arrow">&darr;</a> --
+                        <a class="delete">X</a>
+                    </span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="container">
+                    <span>Nothing loaded. Click below to load</span>
+                </div>
+            {% endif %}
