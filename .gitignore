@@ -22,3 +22,5 @@ pyvenv.cfg
 #windows
 Thumbs.db
 
+#outputs
+*pdf
