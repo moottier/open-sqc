@@ -5,7 +5,8 @@ from typing import Union, List, Any
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, PageBreak
+from reportlab.platypus import SimpleDocTemplate, Paragraph, \
+    Spacer, Image, PageBreak
 
 from ccrev.charts.charting_base import ControlChart
 

@@ -22,8 +22,7 @@ class RuleChecker:
             data: List[float],
             return_type: Any = int,  # TODO fully implement
             **stats_data,
-            #  return_type: Union[Type[int], Type[Signal], Type[Dict]]=int
-    ) -> Union[List[Signal], List[int]]:  # -> Union[List[int], List[Signal], Dict[int, List[int]]]:
+    ) -> Union[List[Signal], List[int]]:
         """
         driver for rule-checking routine
         """
@@ -31,19 +30,23 @@ class RuleChecker:
         signal: Signal = None
         for data_index, datum in enumerate(data):
             # if signal already detected at data_index
+            pass
             if self._signals and any(data_index in signal for signal in self._signals):
                 if signal:
                     self._signals.append(signal)
-                    signal = None  # update signal list and clear signal if signal detected for data index
+                    # update signal list and
+                    # clear signal if signal detected for data index
+                    signal = None
                 continue  # skip data_index
 
             if signal:
                 min_len_continuation_check = rule.min_len_continuation_check or 0
+                # TODO, why need pass signal._is_positive && signal??
                 if rule.is_continued(
                         data[data_index - min_len_continuation_check:data_index + 1],
                         signal._is_positive,
                         signal,
-                        **stats_data  # TODO, why need pass signal._is_positive && signal??
+                        **stats_data
                 ):  # if data point continues signal
                     signal.end_index += 1
                 else:

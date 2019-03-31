@@ -9,7 +9,7 @@ from ccrev import config
 from ccrev.charts.charting_base import ControlChart
 from ccrev.charts.charts import IChart
 from ccrev.config import TEST_DIR, CHART_TYPES
-from ccrev.data_processing import Reviewer
+from ccrev.reviewer import Reviewer
 
 app = Flask(__name__)
 
@@ -56,7 +56,7 @@ def show_chart():
     control_charts: List[ControlChart] = app.config['reviewer'].control_charts
     chart_titles = app.config['reviewer'].chart_titles
     chart_index = chart_titles.index(chart_title)
-    not control_charts[chart_index].data and app.config['reviewer'].load_chart_data(chart_title=chart_title)
+    not control_charts[chart_index].data and app.config['reviewer'].load_data(chart_title=chart_title)
     return render_template(
             'plot.html',
             chart_title=chart_title,
@@ -102,7 +102,7 @@ def _delete_chart():
 def _upload():
     # TODO don't let upload file w/ duplicate title
     file = request.files['userfile']
-    app.config['reviewer'].add_chart_from_file(
+    app.config['reviewer'].add_chart(
             src_file=io.BytesIO(file.read()),
             chart_type=IChart,
             title=app.config['reviewer'].data_extractor.clean_file_names(file.filename)
@@ -116,7 +116,7 @@ def _upload():
 
 if __name__ == '__main__':
     reviewer = Reviewer(**config.REVIEWER_KWARGS)
-    reviewer.add_control_charts_from_directory(TEST_DIR, IChart)
+    reviewer.add_charts(TEST_DIR, IChart)
 
     app: Flask
     app.config['reviewer']: Reviewer = reviewer

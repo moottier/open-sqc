@@ -5,16 +5,18 @@ from ccrev.charts.charts import IChart
 from ccrev.rules import Rule1, Rule2, Rule3, Rule4
 
 # friendly identifiers for stats data
-STDEV = 'st_dev'
-MEAN = 'mean'
+STDEV = 'STDEV'
+MEAN = 'MEAN'
 
 # file paths
-WORKING_DIR = r'H:\code\ccrev\ccrev\output'
 TEST_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'test'))
 PATH: str = os.getcwd()
 TEST_PATH: str = os.path.join(os.getcwd(), 'test')
 
 DATA_COL: int = 4  # 1 indexed
+DATETIME_COL: int = 6
+TIME_COL: int = 2
+DATE_COL: int = 1
 INDEX_COL: int = 6
 DATA_SHEET: int = 0  # 0 indexed
 DATA_START_ROW: int = 2  # 1 indexed
@@ -27,13 +29,13 @@ EXCLUDE_CELL_VALUES = (None, '#REF!')
 
 # for testing
 REVIEWER_KWARGS = {
-    'data_col'                     : DATA_COL,
-    'index_col'                    : INDEX_COL,
+    'y_data_col'                   : DATA_COL,
+    'x_label_col'                  : DATETIME_COL,
     'min_row'                      : DATA_START_ROW,
     'max_row'                      : None,
     'rules'                        : (Rule1, Rule2, Rule3, Rule4),
-    'st_dev'                       : WS_STDEV_ADDR,
-    'mean'                         : WS_MEAN_ADDR,
+    STDEV                          : WS_STDEV_ADDR,
+    MEAN                           : WS_MEAN_ADDR,
     'load_stats_from_src'          : True,
     'data_sheet_index'             : DATA_SHEET,
     'map_signals_to_provided_index': False,

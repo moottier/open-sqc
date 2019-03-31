@@ -4,18 +4,12 @@ import io
 import os
 from abc import abstractmethod
 from numbers import Number
-from typing import List, Union
+from typing import List, Union, Any, Generator
 
 from matplotlib.axes import Axes
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
-
-INDEX_TYPES = [
-    'INTEGER',
-    'DATETIME',
-    'STR',
-]
 
 
 class Plot:
@@ -34,7 +28,8 @@ class Plot:
         self.axes: Axes = self.fig.add_subplot(Plot._SUBPLOT_GRID)
         self.x_labels = x_labels
 
-    def add_line(self, y_data: List[Number], x_data: List[Number], **kwargs) -> None:
+    def add_line(self, y_data: List[Number], x_data: List[Number], **kwargs
+                 ) -> None:
         """
         add a line to the plot
         """
@@ -62,12 +57,19 @@ class Plot:
         else:
             self.canvas.print_jpeg(f'{file_path}.jpeg')
 
-    def show_signals(self, signals: List[int], plotted_data_index: List, plotted_data: List[float]):
+    def show_signals(self, signals: List[int], plotted_data_index: List,
+                     plotted_data: List[float]):
         if not signals:
             return
 
-        x_data = [data_index if signal > 0 else 0 for data_index, signal in zip(plotted_data_index, signals)]
-        y_data = [val if signal > 0 else 0 for val, signal in zip(plotted_data, signals)]
+        x_data = [
+            data_index if signal > 0 else 0
+            for data_index, signal in zip(plotted_data_index, signals)
+        ]
+        y_data = [
+            val if signal > 0 else 0
+            for val, signal in zip(plotted_data, signals)
+        ]
         while True:
             try:
                 x_data.remove(0)
@@ -86,14 +88,19 @@ class Plot:
 
 
 class ControlChart:
-    # TODO interface to data should be cls.data and cls.plot_data same for index & signals
-    def __init__(self, y_data=None, x_data=None, signals=None, title=None):
+    def __init__(self, y_data=None, x_data=None, signals=None,
+                 title=None, x_labels=None):
 
         self.title = title
         self.signals = signals
 
-        self.y_data: List[float] = y_data
-        self.x_data = x_data
+        self.mean_overwritten = False
+        self.stdev_overwritten = False
+
+        self._y_data: List[float] = y_data or []
+        self._x_data = x_data or [idx for idx, _ in enumerate(self.y_data)]
+        self._x_labels = x_labels
+        self.plot: Plot = None
 
         self._stdev = self.stdev
         self._mean = self.mean
@@ -103,7 +110,62 @@ class ControlChart:
         self._y_min = self.y_min
         self._y_max = self.y_max
 
-        self.plot: Plot = None
+        self._data_start: int = None
+        self._data_end: int = None
+
+    @property
+    @abstractmethod
+    def x_labels(self):
+        raise NotImplementedError
+
+    @x_labels.setter
+    @abstractmethod
+    def x_labels(self, val):
+        raise NotImplementedError
+
+    @property
+    def y_data(self):
+        y_data = None
+        if isinstance(self._y_data, Generator):
+            y_data = list(self._y_data)
+            self.y_data = y_data
+        else:
+            y_data = self._y_data
+        return y_data
+
+    @y_data.setter
+    def y_data(self, val):
+        self._y_data = val
+
+    @property
+    def x_data(self):
+        x_data = None
+        if isinstance(self._x_data, Generator):
+            x_data = list(self._x_data)
+            self.x_data = x_data
+        else:
+            x_data = self._x_data
+        return x_data
+
+    @x_data.setter
+    def x_data(self, val):
+        self._x_data = val
+
+    @property
+    def data_start(self):
+        return self._data_start
+
+    @data_start.setter
+    def data_start(self, val):
+        self._data_start = self.x_data.index(self.nearest_x(val))
+
+    @property
+    def data_end(self):
+        return self._data_end
+
+    @data_end.setter
+    def data_end(self, val):
+        self._data_start = self.x_data.index(self.nearest_x(val))
 
     @property
     @abstractmethod
@@ -131,7 +193,8 @@ class ControlChart:
 
     @property
     def x_max(self):
-        return self.plotted_x_data[len(self.plotted_x_data) - 1] if self.y_data else None
+        return self.plotted_x_data[len(self.plotted_x_data) - 1] if self.y_data\
+            else None
 
     @property
     def y_min(self):
@@ -208,7 +271,6 @@ class ControlChart:
             return
 
         unique_signals = sorted(set(self.signals))
-        # TODO looks self.signals is being assigned incorrectly
         try:
             unique_signals.remove(0)
         except ValueError:
@@ -223,7 +285,8 @@ class ControlChart:
         self.plot.save_as_jpeg(file_path)
         return os.path.abspath(os.path.join(os.getcwd(), file_path))
 
-    def resize_plot_axes(self, x_min: float, x_max: float, y_min: float, y_max: float) -> None:
+    def resize_plot_axes(self, x_min: float, x_max: float, y_min: float,
+                         y_max: float) -> None:
         self.plot.resize_plot_axes(
                 x_min=x_min,
                 x_max=x_max,
@@ -232,4 +295,10 @@ class ControlChart:
         )
 
     def format_plot(self) -> None:
-        self.plot.resize_plot_axes(self.x_min, self.x_max, self.y_min, self.y_max)
+        self.plot.resize_plot_axes(
+                self.x_min, self.x_max,
+                self.y_min, self.y_max
+        )
+
+    def nearest_x(self, val) -> Any:
+        return min(self.x_data, key=lambda x: abs(x - val))
