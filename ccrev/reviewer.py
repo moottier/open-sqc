@@ -75,7 +75,6 @@ class Reviewer:
     def load_all_data(self) -> None:
         for chart_title, chart in zip(self.chart_titles, self.control_charts):
             self.load_data(chart_title)
-            chart.make_plot()  # TODO why am I doing this here?
 
     def add_chart(self, src_file: str, chart_type: Type[ControlChart],
                   title=None) -> None:
@@ -217,16 +216,6 @@ class Reviewer:
                 y_min,
                 y_max
         )
-
-    def label_x_axis(self, chart_title):
-        chart_idx = self.chart_titles.index(chart_title)
-        chart = self.control_charts[chart_idx]
-        x_axis = chart.plot.axes.xaxis
-        x_axis.set_major_formatter(mticker.IndexFormatter(
-                [f'{val.month}/{val.day}' if
-                 isinstance(val, datetime) else
-                 val for val in chart.x_labels]
-        ))
 
     def set_data_start_by_idx(self, chart_title: str, idx: Any):
         chart_idx = self.chart_titles.index(chart_title)

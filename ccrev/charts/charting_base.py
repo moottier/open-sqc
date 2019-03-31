@@ -57,18 +57,18 @@ class Plot:
         else:
             self.canvas.print_jpeg(f'{file_path}.jpeg')
 
-    def show_signals(self, signals: List[int], plotted_data_index: List,
-                     plotted_data: List[float]):
+    def show_signals(self, signals: List[int], x_data: List,
+                     y_data: List[float]):
         if not signals:
             return
 
         x_data = [
             data_index if signal > 0 else 0
-            for data_index, signal in zip(plotted_data_index, signals)
+            for data_index, signal in zip(x_data, signals)
         ]
         y_data = [
             val if signal > 0 else 0
-            for val, signal in zip(plotted_data, signals)
+            for val, signal in zip(y_data, signals)
         ]
         while True:
             try:
@@ -100,7 +100,6 @@ class ControlChart:
         self._y_data: List[float] = y_data or []
         self._x_data = x_data or [idx for idx, _ in enumerate(self.y_data)]
         self._x_labels = x_labels
-        self.plot: Plot = None
 
         self._stdev = self.stdev
         self._mean = self.mean
@@ -112,6 +111,11 @@ class ControlChart:
 
         self._data_start: int = None
         self._data_end: int = None
+
+    @property
+    @abstractmethod
+    def plot(self):
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -294,8 +298,8 @@ class ControlChart:
                 y_max=y_max,
         )
 
-    def format_plot(self) -> None:
-        self.plot.resize_plot_axes(
+    def _format_plot(self, plot) -> None:
+        plot.resize_plot_axes(
                 self.x_min, self.x_max,
                 self.y_min, self.y_max
         )

@@ -30,8 +30,8 @@ if __name__ == '__main__':
     reviewer.load_all_data()
     reviewer.check_all_rules()
 
-    for chart in reviewer.control_charts:
-        reviewer.label_x_axis(chart.title)
+    # for chart in reviewer.control_charts:
+    #     reviewer.label_x_axis(chart.title)
 
     # TODO
     #  want an interface like:

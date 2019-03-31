@@ -1,5 +1,8 @@
 import statistics
+from datetime import datetime
 from typing import List, Generator
+
+import matplotlib.ticker as mticker
 
 from ccrev import config
 from ccrev.charts.charting_base import ControlChart, Plot
@@ -95,60 +98,69 @@ class IChart(ControlChart):
     def minus_one_stdev(self):
         return [self.mean - self.stdev] * len(self.plotted_x_data)
 
-    def make_plot(self, show_signals=True) -> Plot:
-        self.plot = Plot()
+    @property
+    def plot(self, show_signals=True) -> Plot:
+        plot = Plot()
         # TODO 
         #  create dict instance attr that these calls pull values from  
         #  would allow for more customization of charts
 
-        self.plot.add_line(
+        plot.add_line(
                 self.plotted_y_data,
                 x_data=self.plotted_x_data,
                 color='b'
         )
-        self.plot.add_line(
+        plot.add_line(
                 self.center,
                 x_data=self.plotted_x_data,
                 color='k'
         )
-        self.plot.add_line(
+        plot.add_line(
                 self.upper_action_limit,
                 x_data=self.plotted_x_data,
                 color='r'
         )
-        self.plot.add_line(
+        plot.add_line(
                 self.lower_action_limit,
                 x_data=self.plotted_x_data,
                 color='r'
         )
-        self.plot.add_line(
+        plot.add_line(
                 self.upper_warning_limit,
                 x_data=self.plotted_x_data,
                 color=config.ORANGE
         )  # orange
-        self.plot.add_line(
+        plot.add_line(
                 self.lower_warning_limit,
                 x_data=self.plotted_x_data,
                 color=config.ORANGE
         )
-        self.plot.add_line(
+        plot.add_line(
                 self.plus_one_stdev,
                 x_data=self.plotted_x_data,
                 color='g'
         )
-        self.plot.add_line(
+        plot.add_line(
                 self.minus_one_stdev,
                 x_data=self.plotted_x_data,
                 color='g'
         )
 
         if show_signals:
-            self.plot.show_signals(
+            plot.show_signals(
                     self.signals,
-                    self.plotted_y_data,
-                    self.plotted_x_data
+                    x_data=self.plotted_x_data,
+                    y_data=self.plotted_y_data
             )
 
-        self.format_plot()
+        if self.x_labels:
+            x_axis = plot.axes.xaxis
+            x_axis.set_major_formatter(mticker.IndexFormatter(
+                    [f'{val.month}/{val.day}' if
+                     isinstance(val, datetime) else
+                     val for val in self.x_labels]
+            ))
 
-        return self.plot
+        self._format_plot(plot)
+
+        return plot
