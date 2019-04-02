@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import copy
 import itertools
 import os
 import unittest
 from typing import List, Dict, Iterable
-
+from datetime import datetime
 from ccrev import config
+from ccrev.charts.charting_base import ControlChart
 from ccrev.extractor import DataExtractor
 from ccrev.reviewer import Reviewer
 
@@ -174,10 +176,11 @@ class TestExcelDataExtractor(unittest.TestCase):
             cls.data_extractor.add_workbook(file)
 
     def test_gen_files_from_dir(self):
-        expected_files = [
-            file for file in os.listdir(config.PATH)
-            if file.endswith(config.EXCEL_FILE_EXTENSIONS)
-        ]
+        expected_files = []
+        for file in os.listdir(config.PATH):
+            if file.endswith(config.EXCEL_FILE_EXTENSIONS) and not any(ign in file for ign in config.IGNORE_FILES):
+                expected_files.append(file)
+
         data_extractor_files = [
             os.path.basename(file) for file in self.excel_files
         ]
@@ -250,6 +253,72 @@ class TestRuleChecker(unittest.TestCase):
                             expected,
                             msg='%s: failed' % file
                     )
+
+class TestControlChart(unittest.TestCase):
+    def setUp(self):
+        self.reviewer = Reviewer(**config.REVIEWER_KWARGS)
+        self.reviewer.add_charts(
+                config.TEST_DIR,
+                config.IChart
+        )
+        self.reviewer.load_all_data()
+        self.control_charts: List[ControlChart] = self.reviewer.control_charts
+
+    def test_set_start(self):
+        starts = {
+            # first in chart
+            'TA': datetime(year=2018, month=9, day=7),
+            # last in sequence of repeated datetimes
+            'Methanol': datetime(year=2018, month=10, day=13, hour=11, minute=4),
+            # datetime past last datetime in labels
+            '#1 pH': datetime(year=2018, month=11, day=14, hour=16, minute=50),
+            # datetime between datetime labels
+            '#2 pH': datetime(year=2018, month=12, day=1),
+        }
+        # lens counted from charts
+        lens = {
+            'TA': 628,
+            'Methanol': 208,
+            '#1 pH': 0,
+            '#2 pH': 39
+        }
+        for chart in self.control_charts:
+            start = None
+            for title_part, dt in starts.items():
+                if title_part in chart.title:
+                    start = (dt, title_part)
+            chart.start_at_label(start[0])
+            with self.subTest(chart_title=chart.title):
+                self.assertEqual(len(chart.y_data), lens[start[1]])
+                self.assertEqual(len(chart.x_data), lens[start[1]])
+
+    def test_set_end(self):
+        ends = {
+            'TA': datetime(year=2018, month=9, day=7),
+            'Methanol': datetime(year=2018, month=10, day=13, hour=11, minute=4),
+            '#1 pH': datetime(year=2018, month=11, day=14, hour=16, minute=50),
+            '#2 pH': datetime(year=2018, month=12, day=1),
+        }
+        # lens counted from charts
+        lens = {
+            'TA': 0,
+            'Methanol': 0,
+            '#1 pH': 1120,
+            '#2 pH': 408
+        }
+        for chart in self.control_charts:
+            end = None
+            for title_part, dt in ends.items():
+                if title_part in chart.title:
+                    end = (dt, title_part)
+            chart.end_at_label(end[0])
+            with self.subTest(chart_title=chart.title):
+                self.assertEqual(len(chart.y_data), lens[end[1]])
+                self.assertEqual(len(chart.x_data), lens[end[1]])
+
+    def test_convert_chart(self):
+        # TODO implement other chart types
+        ...
 
 
 if __name__ == "__main__":

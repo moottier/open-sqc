@@ -225,9 +225,9 @@ class Reviewer:
     def set_data_start_date(self, chart_title, dt: datetime):
         chart_idx = self.chart_titles.index(chart_title)
         chart = self.control_charts[chart_idx]
-        chart.data_start = dt
+        chart.start_at_label = dt
 
     def set_data_end_date(self, chart_title, dt: datetime):
         chart_idx = self.chart_titles.index(chart_title)
         chart = self.control_charts[chart_idx]
-        chart.data_end = dt
+        chart.end_at_label = dt

@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import os
 from abc import abstractmethod
+from bisect import bisect_left, bisect, bisect_right
 from numbers import Number
 from typing import List, Union, Any, Generator
 
@@ -97,6 +98,9 @@ class ControlChart:
         self.mean_overwritten = False
         self.stdev_overwritten = False
 
+        self._data_start_index: int = None
+        self._data_end_index: int = None
+
         self._y_data: List[float] = y_data or []
         self._x_data = x_data or [idx for idx, _ in enumerate(self.y_data)]
         self._x_labels = x_labels
@@ -109,9 +113,6 @@ class ControlChart:
         self._y_min = self.y_min
         self._y_max = self.y_max
 
-        self._data_start: int = None
-        self._data_end: int = None
-
     @property
     @abstractmethod
     def plot(self):
@@ -120,6 +121,7 @@ class ControlChart:
     @property
     @abstractmethod
     def x_labels(self):
+        # TODO should return x_data if no labels assigned
         raise NotImplementedError
 
     @x_labels.setter
@@ -135,7 +137,7 @@ class ControlChart:
             self.y_data = y_data
         else:
             y_data = self._y_data
-        return y_data
+        return y_data[self._data_start_index:self._data_end_index]
 
     @y_data.setter
     def y_data(self, val):
@@ -149,27 +151,33 @@ class ControlChart:
             self.x_data = x_data
         else:
             x_data = self._x_data
-        return x_data
+        return x_data[self._data_start_index:self._data_end_index]
 
     @x_data.setter
     def x_data(self, val):
         self._x_data = val
 
-    @property
-    def data_start(self):
-        return self._data_start
+    def start_at_label(self, label):
+        self._data_start_index = self._nearest(self.x_labels, label)
 
-    @data_start.setter
-    def data_start(self, val):
-        self._data_start = self.x_data.index(self.nearest_x(val))
+    def end_at_label(self, label):
+        self._data_end_index = self._nearest(self.x_labels, label)
 
     @property
-    def data_end(self):
-        return self._data_end
+    def starts_at_label(self):
+        return self.x_labels[self._data_start_index]
 
-    @data_end.setter
-    def data_end(self, val):
-        self._data_start = self.x_data.index(self.nearest_x(val))
+    @property
+    def ends_at_label(self):
+        return self.x_labels[self._data_end_index]
+
+    @property
+    def starts_at_index(self):
+        return self._data_start_index
+
+    @property
+    def ends_at_index(self):
+        return self._data_end_index
 
     @property
     @abstractmethod
@@ -304,5 +312,11 @@ class ControlChart:
                 self.y_min, self.y_max
         )
 
-    def nearest_x(self, val) -> Any:
-        return min(self.x_data, key=lambda x: abs(x - val))
+    def _nearest(self, seq, val) -> Any:
+        if val > seq[-1]:
+            return len(seq)
+        if val < seq[0]:
+            return 0
+        else:
+            return bisect_left(seq, val)
+
